@@ -1,18 +1,6 @@
 ````md
 # 📚 Library Management System
 
-<p align="center">
-  A Laravel-based library management application for managing books, members, borrowing, returns, searching, sorting, and pagination.
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Laravel-13.x-FF2D20?style=for-the-badge&logo=laravel" alt="Laravel">
-  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=for-the-badge&logo=php" alt="PHP">
-  <img src="https://img.shields.io/badge/MySQL-8.4-4479A1?style=for-the-badge&logo=mysql" alt="MySQL">
-  <img src="https://img.shields.io/badge/Architecture-Service%20Layer-0E7490?style=for-the-badge" alt="Architecture">
-  <img src="https://img.shields.io/badge/UI-Blade%20Templates-orange?style=for-the-badge" alt="Blade">
-</p>
-
 ---
 
 # 📌 Overview
