@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-
-
 use App\Models\Book;
 use App\Models\Member;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 
 class DashboardController extends Controller
@@ -17,45 +15,77 @@ class DashboardController extends Controller
     public function index()
     {
 
-
-        // Count all books
-        $totalBooks = Book::count();
+        try {
 
 
-
-        // Books that have a member_id
-        // means they are borrowed
-
-        $borrowedBooks = Book::whereNotNull('member_id')
-                            ->count();
+            // Total number of books
+            $totalBooks = Book::count();
 
 
 
-        // Books that do not have member_id
-        // means they are available
-
-        $availableBooks = Book::whereNull('member_id')
-                            ->count();
+            // Books currently borrowed
+            $borrowedBooks = Book::whereNotNull('member_id')
+                ->count();
 
 
 
-        // Count members
+            // Books currently available
+            $availableBooks = Book::whereNull('member_id')
+                ->count();
 
-        $totalMembers = Member::count();
+
+
+            // Total members
+            $totalMembers = Member::count();
 
 
 
-        return view('dashboard', compact(
+            return response()->json([
 
-            'totalBooks',
+                'message' => 'Library statistics retrieved successfully',
 
-            'borrowedBooks',
+                'data' => [
 
-            'availableBooks',
+                    'total_books' => $totalBooks,
 
-            'totalMembers'
+                    'borrowed_books' => $borrowedBooks,
 
-        ));
+                    'available_books' => $availableBooks,
+
+                    'total_members' => $totalMembers
+
+                ]
+
+            ],200);
+
+
+
+        } catch(Exception $e) {
+
+
+            Log::error('Dashboard statistics failed', [
+
+                'message'=>$e->getMessage(),
+
+                'line'=>$e->getLine(),
+
+                'file'=>$e->getFile()
+
+            ]);
+
+
+
+            return response()->json([
+
+                'message'=>'Unable to retrieve statistics',
+
+                'error'=>$e->getMessage()
+
+            ],500);
+
+
+        }
+
 
     }
 

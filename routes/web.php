@@ -25,13 +25,6 @@ Route::post('/members/{member}/books/{book}/borrow',
     ->name('members.borrow');
 
 
-// Return book
-Route::post('/books/{book}/return',
-    [BookController::class,'returnBook'])
-    ->name('books.return');
-
-
-
 Route::post('/members/{member}/books/{book}/return',
     [MemberController::class,'returnBook'])
     ->name('members.return');

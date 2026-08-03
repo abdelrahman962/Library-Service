@@ -6,233 +6,475 @@ use App\Models\Member;
 use App\Models\Book;
 use Illuminate\Http\Request;
 use App\Services\LibraryService;
-
+use App\Http\Requests\StoreMemberRequest;
+use App\Http\Requests\UpdateMemberRequest;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class MemberController extends Controller
 {
 
-protected $library;
+    protected $library;
 
 
-public function __construct(LibraryService $library)
-{
-    $this->library = $library;
-}
-
-
-   public function index(Request $request)
-{
-
-    $search = $request->search;
-
-
-    if($search){
-
-        $members = Member::where('name','like','%'.$search.'%')
-        ->orWhere('email','like','%'.$search.'%')
-        ->with('books')
-        ->paginate(5);
-
-
-    }else{
-
-
-        $members = Member::with('books')
-        ->paginate(5);
-
-    }
-
-
-    return view('members.index', compact('members'));
-
-}
-
-
-
-    public function create()
+    public function __construct(LibraryService $library)
     {
-        return view('members.create');
+        $this->library = $library;
     }
 
 
 
-    public function store(Request $request)
+    // GET /api/members
+    public function index(Request $request)
     {
 
-        $request->validate([
+        try {
 
-            'name'=>'required|string|max:255',
 
-            'email'=>'required|email|unique:members,email'
+            $query = Member::with('books');
 
-        ]);
 
+            if($request->filled('search')){
 
-        $this->library->addMember([
 
-            'name'=>$request->name,
+                $search = $request->search;
 
-            'email'=>$request->email
 
-        ]);
+                $query->where(function($q) use ($search){
 
+                    $q->where('name','like','%'.$search.'%')
+                      ->orWhere('email','like','%'.$search.'%');
 
-        return redirect('/members')
-        ->with('success','Member added successfully');
+                });
 
-    }
 
+            }
 
 
 
-    public function edit(Member $member)
-    {
-        return view('members.edit',compact('member'));
-    }
+            $members = $query->paginate(5);
 
 
 
-    public function show(Member $member)
-    {
-        $member->load('books');
+            return response()->json([
+                'success'=>true,
+                'data'=>$members
+            ]);
 
-        return view('members.show', compact('member'));
-    }
 
 
+        }catch(Exception $e){
 
 
-    public function update(Request $request, Member $member)
-    {
+            Log::error('Getting members failed',[
+                'message'=>$e->getMessage()
+            ]);
 
-        $request->validate([
 
-            'name'=>'required|string|max:255',
+            return response()->json([
+                'success'=>false,
+                'message'=>'Unable to get members'
+            ],500);
 
-            'email'=>'required|email|unique:members,email,'.$member->id
-
-        ]);
-
-
-        $member->update([
-
-            'name'=>$request->name,
-
-            'email'=>$request->email
-
-        ]);
-
-
-        return redirect('/members');
-
-    }
-
-
-
-
-
-    public function destroy(Member $member)
-    {
-
-        $member->delete();
-
-
-        return redirect('/members');
-
-    }
-
-
-
-public function borrowBooks(Request $request, Member $member)
-{
-
-    $search = $request->search;
-
-
-    if($search){
-
-        $books = Book::where('title','like','%'.$search.'%')
-            ->orWhere('category','like','%'.$search.'%')
-            ->paginate(5);
-
-    }
-    else{
-
-        $books = Book::paginate(5);
-
-    }
-
-
-    return view('members.borrow',
-    compact('member','books'));
-
-}
-
-
-
-    // Borrow book
-
-    public function borrow(Member $member, Book $book)
-    {
-
-
-        if(!$book->isAvailable()){
-
-
-            return redirect()
-            ->back()
-            ->with('error',
-            'This book is already borrowed.');
 
         }
 
-
-
-        $book->update([
-
-            'member_id'=>$member->id
-
-        ]);
-
-
-
-        return redirect()
-        ->back()
-        ->with('success',
-        'Book borrowed successfully.');
-
-    }
-public function returnBook(Member $member, Book $book)
-{
-
-    // Check that this book belongs to this member
-
-    if($book->member_id != $member->id){
-
-        return redirect()
-        ->back()
-        ->with('error',
-        'This book is not borrowed by this member.');
-
     }
 
 
 
-    // Make the book available again
 
-    $book->update([
+    // POST /api/members
+    public function store(StoreMemberRequest $request)
+    {
 
-        'member_id'=>null
+        try{
+
+
+            $member = $this->library->addMember(
+                $request->validated()
+            );
+
+
+
+            return response()->json([
+
+                'success'=>true,
+
+                'message'=>'Member created successfully',
+
+                'data'=>$member
+
+            ],201);
+
+
+
+        }catch(Exception $e){
+
+
+            Log::error('Member creation failed',[
+
+                'message'=>$e->getMessage(),
+
+                'line'=>$e->getLine()
+
+            ]);
+
+
+
+            return response()->json([
+
+                'success'=>false,
+
+                'message'=>'Unable to create member'
+
+            ],500);
+
+
+        }
+
+    }
+
+
+
+
+
+    // GET /api/members/{member}
+    public function show(int $id)
+    {
+
+        try{
+            $member=Member::findOrFail($id);
+
+
+
+            $member->load('books');
+
+
+            return response()->json([
+
+                'success'=>true,
+
+                'data'=>$member
+
+            ]);
+
+
+
+        }catch(Exception $e){
+
+            Log::error('Getting member failed ',[
+                'member_id'=>$id,
+                'message'=>$e->getMessage()
+            ]);
+            return response()->json([
+
+                'success'=>false,
+
+                'message'=>'Unable to get member'
+
+            ],500);
+
+
+        }
+
+    }
+
+
+
+
+
+    // PUT /api/members/{member}
+    public function update(UpdateMemberRequest $request, int $id)
+    {
+
+        try{
+            $member=Member::findOrFail($id);
+
+
+            $member->update(
+                $request->validated()
+            );
+
+
+
+            return response()->json([
+
+                'success'=>true,
+
+                'message'=>'Member updated successfully',
+
+                'data'=>$member
+
+            ]);
+
+
+
+        }catch(Exception $e){
+
+
+            Log::error('Member update failed',[
+
+                'member_id'=>$id,
+
+                'message'=>$e->getMessage()
+
+            ]);
+
+
+
+            return response()->json([
+
+                'success'=>false,
+
+                'message'=>'Unable to update member'
+
+            ],500);
+
+
+        }
+
+    }
+
+
+
+
+
+    // DELETE /api/members/{member}
+    public function destroy(int $id)
+    {
+
+        try{
+            $member=Member::findOrFail($id);
+
+
+            $member->delete();
+
+
+
+            return response()->json([
+
+                'success'=>true,
+
+                'message'=>'Member deleted successfully'
+
+            ]);
+
+
+
+        }catch(Exception $e){
+
+
+            Log::error('Member deletion failed',[
+
+                'member_id'=>$id,
+
+                'message'=>$e->getMessage()
+
+            ]);
+
+
+
+            return response()->json([
+
+                'success'=>false,
+
+                'message'=>'Unable to delete member'
+
+            ],500);
+
+
+        }
+
+    }
+
+
+
+
+
+    // GET /api/members/{member}/books
+    // Show books that member can borrow
+    public function borrowBooks(Request $request, int $id)
+    {
+
+        try{
+            $member = Member::with('books')->findOrFail($id);
+
+
+            $query = Book::whereNull('member_id');
+
+
+
+            if($request->filled('search')){
+
+
+                $search=$request->search;
+
+
+                $query->where(function($q) use ($search){
+
+                    $q->where('title','like','%'.$search.'%')
+                      ->orWhere('category','like','%'.$search.'%');
+
+                });
+
+
+            }
+
+
+
+            $books=$query->paginate(5);
+
+
+
+            return response()->json([
+
+                'success'=>true,
+
+                'member'=>$member,
+
+                'books'=>$books
+
+            ]);
+
+
+
+        }catch(Exception $e){
+
+    Log::error('Loading borrow books failed',[
+
+        'member_id'=>$id,
+
+        'message'=>$e->getMessage()
 
     ]);
 
 
+            return response()->json([
 
-    return redirect()
-    ->back()
-    ->with('success',
-    'Book returned successfully.');
+                'success'=>false,
 
-}
+                'message'=>'Unable to load books'
+
+            ],500);
+
+
+        }
+
+    }
+
+
+
+
+
+
+    // POST /api/members/{member}/books/{book}/borrow
+    public function borrow(int $id, int $bookId)
+    {
+
+        try{
+            $member=Member::findOrFail($id);
+
+            $book=Book::findOrFail($bookId);
+            $result=$this->library
+                ->borrowBookForMember($member,$book);
+
+
+
+            return response()->json([
+
+                'success'=>$result['ok'],
+
+                'message'=>$result['message']
+
+            ]);
+
+
+
+        }catch(Exception $e){
+
+
+            Log::error('Borrow book failed',[
+
+                'member_id'=>$id,
+
+                'book_id'=>$bookId,
+
+                'message'=>$e->getMessage()
+
+            ]);
+
+
+
+            return response()->json([
+
+                'success'=>false,
+
+                'message'=>'Unable to borrow book'
+
+            ],500);
+
+
+        }
+
+    }
+
+
+
+
+
+
+
+    // POST /api/members/{member}/books/{book}/return
+    public function returnBook(int $id, int $bookId)
+    {
+
+        try{
+            $member=Member::findOrFail($id);
+            $book=Book::findOrFail($bookId);
+
+            $result=$this->library
+                ->returnBook($book,$member);
+
+
+
+            return response()->json([
+
+                'success'=>$result['ok'],
+
+                'message'=>$result['message']
+
+            ]);
+
+
+
+        }catch(Exception $e){
+
+
+            Log::error('Return book failed',[
+
+                'member_id'=>$id,
+
+                'book_id'=>$bookId,
+
+                'message'=>$e->getMessage()
+
+            ]);
+
+
+
+            return response()->json([
+
+                'success'=>false,
+
+                'message'=>'Unable to return book'
+
+            ],500);
+
+
+        }
+
+    }
+
 
 }

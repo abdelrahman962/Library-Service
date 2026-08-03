@@ -5,212 +5,347 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Book;
 use App\Services\LibraryService;
+use App\Http\Requests\StoreBookRequest;
+use App\Http\Requests\UpdateBookRequest;
+use Exception;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class BookController extends Controller
 {
-protected $library;
 
-public function __construct(LibraryService $library)
-{
-    $this->library = $library;
-}
+    protected $library;
 
-public function index(Request $request)
-{
-    $query = $this->library->displayBooks();
 
-    if ($request->filled('search')) {
-        $search = $request->search;
+    public function __construct(LibraryService $library)
+    {
+        $this->library = $library;
+    }
 
-        $bookIds = $this->library->searchBookByTitle($search)
-            ->pluck('id')
-            ->merge($this->library->searchBookByCategory($search)->pluck('id'))
-            ->unique()
-            ->values();
 
-        $query->whereIn('id', $bookIds);
+    // GET /api/books
+    public function index(Request $request)
+    {
+        try {
+
+            $query = $this->library->displayBooks();
+
+
+            // Search by title or category
+            if ($request->filled('search')) {
+
+                $search = $request->search;
+
+
+                $bookIds = $this->library
+                    ->searchBookByTitle($search)
+                    ->pluck('id')
+                    ->merge(
+                        $this->library
+                            ->searchBookByCategory($search)
+                            ->pluck('id')
+                    )
+                    ->unique()
+                    ->values();
+
+
+                $query->whereIn('id', $bookIds);
+
+            }
+
+
+
+            // Sorting
+            switch ($request->sort) {
+
+                case 'title_asc':
+
+                    $query->orderBy('title', 'asc');
+
+                    break;
+
+
+                case 'title_desc':
+
+                    $query->orderBy('title', 'desc');
+
+                    break;
+
+
+                case 'newest':
+
+                    $query->orderBy('publish_year', 'desc');
+
+                    break;
+
+
+                case 'oldest':
+
+                    $query->orderBy('publish_year', 'asc');
+
+                    break;
+            }
+
+
+
+            $books = $query->paginate(10);
+
+
+            return response()->json([
+
+                'success' => true,
+
+                'data' => $books
+
+            ]);
+
+
+        } catch (Exception $e) {
+
+
+            Log::error('Getting books failed', [
+
+                'message' => $e->getMessage(),
+
+                'line' => $e->getLine()
+
+            ]);
+
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'Unable to get books'
+
+            ], 500);
+
+        }
     }
 
 
 
-    // Sorting
-    switch($request->sort)
+
+
+    // GET /api/books/{id}
+    public function show(int $id)
     {
 
-        case 'title_asc':
-
-            $query->orderBy('title','asc');
-
-            break;
+        try {
 
 
-
-        case 'title_desc':
-
-            $query->orderBy('title','desc');
-
-            break;
+            $book = Book::findOrFail($id);
 
 
+            return response()->json([
 
-        case 'newest':
+                'success' => true,
 
-            $query->orderBy('publish_year','desc');
+                'data' => $book
 
-            break;
+            ]);
 
 
+        } catch (ModelNotFoundException $e) {
 
-        case 'oldest':
 
-            $query->orderBy('publish_year','asc');
+        return response()->json([
 
-            break;
+            'success' => false,
 
-    }
+            'message' => 'Book not found'
+
+        ],404);
 
 
 
-    $books = $query->paginate(10);
+    } catch (Exception $e) {
 
 
+        Log::error('Getting book failed',[
 
-    return view('books.index', compact('books'));
+            'book_id'=>$id,
 
-}
-
-
-public function show(Book $book)
-{
-    return view('books.show', compact('book'));
-}
-
-
-
-    // Show create form
-    public function create()
-    {
-        return view('books.create');
-    }
-
-
-
-    // Store new book
-    public function store(Request $request)
-    {
-
-     $request->validate([
-
-        'title'=>'required|string|max:255',
-
-        'author'=>'required|string|max:255',
-
-        'category'=>'required|string|max:255',
-
-        'publish_year'=>'required|integer|min:0|max:'.date('Y')
-
-    ]);
-
-        $this->library->addBook([
-
-            'title'=>$request->title,
-
-            'author'=>$request->author,
-
-            'category'=>$request->category,
-
-            'publish_year'=>$request->publish_year
+            'message'=>$e->getMessage()
 
         ]);
 
 
-        return redirect('/books')
-        ->with('success','Book added successfully');
+        return response()->json([
 
+            'success'=>false,
+
+            'message'=>'Unable to get book'
+
+        ],500);
+        }
     }
 
 
 
 
-    // Show edit form
-    public function edit(Book $book)
+
+    // POST /api/books
+    public function store(StoreBookRequest $request)
     {
 
-        return view('books.edit', compact('book'));
+        try {
+
+
+            $book = $this->library->addBook(
+
+                $request->validated()
+
+            );
+
+
+            return response()->json([
+
+                'success' => true,
+
+                'message' => 'Book created successfully',
+
+                'data' => $book
+
+            ], 201);
+
+
+
+        } catch (Exception $e) {
+
+
+            Log::error('Book creation failed', [
+
+                'message' => $e->getMessage(),
+
+                'file' => $e->getFile(),
+
+                'line' => $e->getLine()
+
+            ]);
+
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'Unable to create book'
+
+            ], 500);
+
+        }
 
     }
 
 
 
 
-    // Update book
-    public function update(Request $request, Book $book)
-    {
-$request->validate([
 
-        'title'=>'required|string|max:255',
-
-        'author'=>'required|string|max:255',
-
-        'category'=>'required|string|max:255',
-
-        'publish_year'=>'required|integer|min:0|max:'.date('Y')
-
-    ]);
-        $book->update([
-
-            'title'=>$request->title,
-
-            'author'=>$request->author,
-
-            'category'=>$request->category,
-
-            'publish_year'=>$request->publish_year
-
-        ]);
-
-
-          return redirect('/books')
-    ->with('success','Book updated successfully');
-
-    }
-
-
-
-
-    // Delete book
-    public function destroy(Book $book)
-    {
-
-        $this->library->removeBook($book);
-
-
-        return redirect('/books');
-
-    }
-
-
-
-
-
-    // Return book
-    public function returnBook(Book $book)
+    // PUT /api/books/{id}
+    public function update(UpdateBookRequest $request, int $id)
     {
 
-
-        $book->update([
-
-            'member_id'=>null
-
-        ]);
+        try {
 
 
+            $book = Book::findOrFail($id);
 
-        return redirect('/books')
-        ->with('success','Book returned successfully');
+
+            $book->update(
+
+                $request->validated()
+
+            );
+
+
+            return response()->json([
+
+                'success' => true,
+
+                'message' => 'Book updated successfully',
+
+                'data' => $book
+
+            ]);
+
+
+
+        } catch (Exception $e) {
+
+
+            Log::error('Book update failed', [
+
+                'book_id' => $id,
+
+                'message' => $e->getMessage(),
+
+                'line' => $e->getLine()
+
+            ]);
+
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'Unable to update book'
+
+            ], 500);
+
+        }
 
     }
 
 
+
+
+
+    // DELETE /api/books/{id}
+    public function destroy(int $id)
+    {
+
+        try {
+
+
+            $book = Book::findOrFail($id);
+
+
+            $this->library->removeBook($book);
+
+
+
+            return response()->json([
+
+                'success' => true,
+
+                'message' => 'Book deleted successfully'
+
+            ]);
+
+
+
+        } catch (Exception $e) {
+
+
+            Log::error('Book deletion failed', [
+
+                'book_id' => $id,
+
+                'message' => $e->getMessage()
+
+            ]);
+
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'Unable to delete book'
+
+            ], 500);
+
+        }
+
+    }
 
 }
