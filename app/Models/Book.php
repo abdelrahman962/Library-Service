@@ -1,14 +1,17 @@
 <?php
 
 namespace App\Models;
-
+use App\Models\BorrowHistory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class Book extends Model
 {
     //
-    use SoftDeletes;
+    use SoftDeletes,LogsActivity;
 use HasFactory;
     protected $fillable=[
 
@@ -19,6 +22,20 @@ use HasFactory;
 'member_id'
 
 ];
+
+
+public function borrowHistories()
+{
+    return $this->hasMany(BorrowHistory::class);
+}
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 public function member()
 {
     return $this->belongsTo(Member::class);

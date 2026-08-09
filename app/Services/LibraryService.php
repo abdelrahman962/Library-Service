@@ -5,7 +5,7 @@ namespace App\Services;
 
 use App\Models\Book;
 use App\Models\Member;
-
+use App\Models\BorrowHistory;
 
 class LibraryService
 {
@@ -78,6 +78,16 @@ public function borrowBookForMember(Member $member, Book $book): array
         'member_id' => $member->id,
     ]);
 
+    BorrowHistory::create([
+
+        'book_id' => $book->id,
+
+        'member_id' => $member->id,
+
+        'borrowed_at' => now(),
+
+    ]);
+
     return [
         'ok' => true,
         'message' => 'Book borrowed successfully.',
@@ -102,6 +112,12 @@ public function returnBook(Book $book, ?Member $member = null): array
 
     $book->update([
         'member_id' => null,
+    ]);
+    BorrowHistory::where('book_id',$book->id)
+    ->where('member_id',$member->id)
+    ->whereNull('returned_at')
+    ->update([
+        'returned_at'=>now()
     ]);
 
     return [

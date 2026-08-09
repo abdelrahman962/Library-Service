@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\Member;
 use App\Models\Book;
 use Illuminate\Http\Request;
@@ -10,12 +10,10 @@ use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
 use Exception;
 use Illuminate\Support\Facades\Log;
-
 class MemberController extends Controller
 {
 
-    protected $library;
-
+    protected LibraryService $library;
 
     public function __construct(LibraryService $library)
     {
@@ -197,7 +195,6 @@ class MemberController extends Controller
             );
 
 
-
             return response()->json([
 
                 'success'=>true,
@@ -246,7 +243,6 @@ class MemberController extends Controller
 
         try{
             $member=Member::findOrFail($id);
-
 
             $member->delete();
 
@@ -435,7 +431,6 @@ class MemberController extends Controller
 
             $result=$this->library
                 ->returnBook($book,$member);
-
 
 
             return response()->json([

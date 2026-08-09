@@ -1,72 +1,61 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BorrowHistoryController;
 
 
+/*
+|--------------------------------------------------------------------------
+| Library API Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware('log.api')->group(function () {
 
 
     /*
     |--------------------------------------------------------------------------
-    | Books API
+    | Books
     |--------------------------------------------------------------------------
     */
 
-
-    Route::get('/books', [BookController::class, 'index']);
-
-    Route::post('/books', [BookController::class, 'store']);
-
-    Route::get('/books/{id}', [BookController::class, 'show']);
-
-    Route::put('/books/{id}', [BookController::class, 'update']);
-
-    Route::delete('/books/{id}', [BookController::class, 'destroy']);
-
-
+    Route::apiResource(
+        'books',
+        BookController::class
+    );
 
 
     /*
     |--------------------------------------------------------------------------
-    | Members API
+    | Members
     |--------------------------------------------------------------------------
     */
 
-
-    Route::get('/members', [MemberController::class, 'index']);
-
-    Route::post('/members', [MemberController::class, 'store']);
-
-    Route::get('/members/{id}', [MemberController::class, 'show']);
-
-    Route::put('/members/{id}', [MemberController::class, 'update']);
-
-    Route::delete('/members/{id}', [MemberController::class, 'destroy']);
-
+    Route::apiResource(
+        'members',
+        MemberController::class
+    );
 
 
     /*
     |--------------------------------------------------------------------------
-    | Member Borrowing APIs
+    | Borrowing
     |--------------------------------------------------------------------------
     */
-
 
     Route::get(
         '/members/{id}/books',
         [MemberController::class, 'borrowBooks']
     );
 
-
     Route::post(
         '/members/{id}/books/{bookId}/borrow',
         [MemberController::class, 'borrow']
     );
-
 
     Route::post(
         '/members/{id}/books/{bookId}/return',
@@ -74,15 +63,27 @@ Route::middleware('log.api')->group(function () {
     );
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Borrow History
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/books/{id}/history',
+        [BorrowHistoryController::class, 'bookHistory']
+    );
 
 
     /*
     |--------------------------------------------------------------------------
-    | Dashboard API
+    | Dashboard
     |--------------------------------------------------------------------------
     */
 
-
-    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get(
+        '/dashboard',
+        [DashboardController::class, 'index']
+    );
 
 });

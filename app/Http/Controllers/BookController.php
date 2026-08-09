@@ -10,11 +10,11 @@ use App\Http\Requests\UpdateBookRequest;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-
+use App\Services\ActivityLogService;
 class BookController extends Controller
 {
 
-    protected $library;
+    protected LibraryService $library;
 
 
     public function __construct(LibraryService $library)
@@ -199,6 +199,8 @@ class BookController extends Controller
             );
 
 
+
+
             return response()->json([
 
                 'success' => true,
@@ -258,6 +260,8 @@ class BookController extends Controller
             );
 
 
+
+
             return response()->json([
 
                 'success' => true,
@@ -270,7 +274,18 @@ class BookController extends Controller
 
 
 
-        } catch (Exception $e) {
+        } catch(ModelNotFoundException $e)
+{
+
+    return response()->json([
+
+        'success'=>false,
+
+        'message'=>'Book not found'
+
+    ],404);
+
+}catch (Exception $e) {
 
 
             Log::error('Book update failed', [
