@@ -14,76 +14,72 @@ use App\Http\Controllers\BorrowHistoryController;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('log.api')->group(function () {
+
+/*
+|--------------------------------------------------------------------------
+| Books
+|--------------------------------------------------------------------------
+*/
+
+Route::apiResource(
+    'books',
+    BookController::class
+);
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Books
-    |--------------------------------------------------------------------------
-    */
+/*
+|--------------------------------------------------------------------------
+| Members
+|--------------------------------------------------------------------------
+*/
 
-    Route::apiResource(
-        'books',
-        BookController::class
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Members
-    |--------------------------------------------------------------------------
-    */
-
-    Route::apiResource(
-        'members',
-        MemberController::class
-    );
+Route::apiResource(
+    'members',
+    MemberController::class
+);
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Borrowing
-    |--------------------------------------------------------------------------
-    */
+/*
+|--------------------------------------------------------------------------
+| Borrowing
+|--------------------------------------------------------------------------
+*/
 
-    Route::get(
-        '/members/{id}/books',
-        [MemberController::class, 'borrowBooks']
-    );
+Route::get(
+    '/members/{id}/books',
+    [MemberController::class, 'borrowBooks']
+);
 
-    Route::post(
-        '/members/{id}/books/{bookId}/borrow',
-        [MemberController::class, 'borrow']
-    );
+Route::post(
+    '/members/{id}/books/{bookId}/borrow',
+    [MemberController::class, 'borrow']
+);
 
-    Route::post(
-        '/members/{id}/books/{bookId}/return',
-        [MemberController::class, 'returnBook']
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Borrow History
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/books/{id}/history',
-        [BorrowHistoryController::class, 'bookHistory']
-    );
+Route::post(
+    '/members/{id}/books/{bookId}/return',
+    [MemberController::class, 'returnBook']
+);
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Dashboard
-    |--------------------------------------------------------------------------
-    */
+/*
+|--------------------------------------------------------------------------
+| Borrow History
+|--------------------------------------------------------------------------
+*/
 
-    Route::get(
-        '/dashboard',
-        [DashboardController::class, 'index']
-    );
+Route::get(
+    '/books/{id}/history',
+    [BorrowHistoryController::class, 'bookHistory']
+);
 
-});
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/dashboard',
+    [DashboardController::class, 'index']
+);

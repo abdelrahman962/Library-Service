@@ -8,7 +8,7 @@ class BorrowHistoryController extends Controller
 {
     //
 
-     public function bookHistory($id)
+     public function bookHistory(int $id)
     {
 
         $book = Book::with('borrowHistories.member')
