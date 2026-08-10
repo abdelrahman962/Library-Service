@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 use App\Models\Member;
 use App\Models\Book;
 use Illuminate\Http\Request;
@@ -10,9 +10,9 @@ use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
 use Exception;
 use Illuminate\Support\Facades\Log;
+
 class MemberController extends Controller
 {
-
     protected LibraryService $library;
 
     public function __construct(LibraryService $library)
@@ -21,455 +21,330 @@ class MemberController extends Controller
     }
 
 
-
     // GET /api/members
+    // Admin: Get all members
     public function index(Request $request)
     {
-
         try {
-
 
             $query = Member::with('books');
 
-
-            if($request->filled('search')){
-
+            if ($request->filled('search')) {
 
                 $search = $request->search;
 
+                $query->where(function ($q) use ($search) {
 
-                $query->where(function($q) use ($search){
-
-                    $q->where('name','like','%'.$search.'%')
-                      ->orWhere('email','like','%'.$search.'%');
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%');
 
                 });
-
-
             }
-
-
 
             $members = $query->paginate(5);
 
-
-
             return response()->json([
-                'success'=>true,
-                'data'=>$members
+                'success' => true,
+                'data' => $members
             ]);
 
+        } catch (Exception $e) {
 
-
-        }catch(Exception $e){
-
-
-            Log::error('Getting members failed',[
-                'message'=>$e->getMessage()
+            Log::error('Getting members failed', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
             ]);
 
-
             return response()->json([
-                'success'=>false,
-                'message'=>'Unable to get members'
-            ],500);
-
-
+                'success' => false,
+                'message' => 'Unable to get members'
+            ], 500);
         }
-
     }
 
 
-
-
     // POST /api/members
+    // Admin: Create a member
     public function store(StoreMemberRequest $request)
     {
-
-        try{
-
+        try {
 
             $member = $this->library->addMember(
                 $request->validated()
             );
 
-
-
             return response()->json([
+                'success' => true,
+                'message' => 'Member created successfully',
+                'data' => $member
+            ], 201);
 
-                'success'=>true,
+        } catch (Exception $e) {
 
-                'message'=>'Member created successfully',
-
-                'data'=>$member
-
-            ],201);
-
-
-
-        }catch(Exception $e){
-
-
-            Log::error('Member creation failed',[
-
-                'message'=>$e->getMessage(),
-
-                'line'=>$e->getLine()
-
+            Log::error('Member creation failed', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
             ]);
 
-
-
             return response()->json([
-
-                'success'=>false,
-
-                'message'=>'Unable to create member'
-
-            ],500);
-
-
+                'success' => false,
+                'message' => 'Unable to create member'
+            ], 500);
         }
-
     }
 
 
-
-
-
-    // GET /api/members/{member}
+    // GET /api/members/{id}
+    // Admin: Get one member
     public function show(int $id)
     {
+        try {
 
-        try{
-            $member=Member::findOrFail($id);
-
-
-
-            $member->load('books');
-
+            $member = Member::with('books')->findOrFail($id);
 
             return response()->json([
-
-                'success'=>true,
-
-                'data'=>$member
-
+                'success' => true,
+                'data' => $member
             ]);
 
+        } catch (Exception $e) {
 
-
-        }catch(Exception $e){
-
-            Log::error('Getting member failed ',[
-                'member_id'=>$id,
-                'message'=>$e->getMessage()
+            Log::error('Getting member failed', [
+                'member_id' => $id,
+                'message' => $e->getMessage()
             ]);
+
             return response()->json([
-
-                'success'=>false,
-
-                'message'=>'Unable to get member'
-
-            ],500);
-
-
+                'success' => false,
+                'message' => 'Member not found'
+            ], 404);
         }
-
     }
 
 
-
-
-
-    // PUT /api/members/{member}
+    // PUT /api/members/{id}
+    // Admin: Update member
     public function update(UpdateMemberRequest $request, int $id)
     {
+        try {
 
-        try{
-            $member=Member::findOrFail($id);
-
+            $member = Member::findOrFail($id);
 
             $member->update(
                 $request->validated()
             );
 
-
             return response()->json([
-
-                'success'=>true,
-
-                'message'=>'Member updated successfully',
-
-                'data'=>$member
-
+                'success' => true,
+                'message' => 'Member updated successfully',
+                'data' => $member
             ]);
 
+        } catch (Exception $e) {
 
-
-        }catch(Exception $e){
-
-
-            Log::error('Member update failed',[
-
-                'member_id'=>$id,
-
-                'message'=>$e->getMessage()
-
+            Log::error('Member update failed', [
+                'member_id' => $id,
+                'message' => $e->getMessage()
             ]);
 
-
-
             return response()->json([
-
-                'success'=>false,
-
-                'message'=>'Unable to update member'
-
-            ],500);
-
-
+                'success' => false,
+                'message' => 'Member not found'
+            ], 404);
         }
-
     }
 
 
-
-
-
-    // DELETE /api/members/{member}
+    // DELETE /api/members/{id}
+    // Admin: Delete member
     public function destroy(int $id)
     {
+        try {
 
-        try{
-            $member=Member::findOrFail($id);
+            $member = Member::findOrFail($id);
 
             $member->delete();
 
-
-
             return response()->json([
-
-                'success'=>true,
-
-                'message'=>'Member deleted successfully'
-
+                'success' => true,
+                'message' => 'Member deleted successfully'
             ]);
 
+        } catch (Exception $e) {
 
-
-        }catch(Exception $e){
-
-
-            Log::error('Member deletion failed',[
-
-                'member_id'=>$id,
-
-                'message'=>$e->getMessage()
-
+            Log::error('Member deletion failed', [
+                'member_id' => $id,
+                'message' => $e->getMessage()
             ]);
 
-
-
             return response()->json([
-
-                'success'=>false,
-
-                'message'=>'Unable to delete member'
-
-            ],500);
-
-
+                'success' => false,
+                'message' => 'Member not found'
+            ], 404);
         }
-
     }
 
 
-
-
-
-    // GET /api/members/{member}/books
-    // Show books that member can borrow
-    public function borrowBooks(Request $request, int $id)
+    // GET /api/member/books
+    // Member: Show books currently borrowed by logged-in member
+    public function borrowBooks(Request $request)
     {
+        try {
 
-        try{
-            $member = Member::with('books')->findOrFail($id);
+            $member = $request->user();
+
+            $books = $member->books()->paginate(5);
+
+            return response()->json([
+                'success' => true,
+                'data' => $books
+            ]);
+
+        } catch (Exception $e) {
+
+            Log::error('Loading member books failed', [
+                'member_id' => optional($request->user())->id,
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to load member books'
+            ], 500);
+        }
+    }
 
 
-            $query = Book::whereNull('member_id');
+    // POST /api/books/{bookId}/borrow
+    // Member: Borrow a book
+    public function borrow(Request $request, int $bookId)
+    {
+        try {
 
+            // Get currently authenticated member
+            $member = $request->user();
 
+            // Find requested book
+            $book = Book::findOrFail($bookId);
 
-            if($request->filled('search')){
+            // Let service handle borrowing business logic
+            $result = $this->library->borrowBookForMember(
+                $member,
+                $book
+            );
 
+            if (!$result['ok']) {
 
-                $search=$request->search;
-
-
-                $query->where(function($q) use ($search){
-
-                    $q->where('title','like','%'.$search.'%')
-                      ->orWhere('category','like','%'.$search.'%');
-
-                });
-
-
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message']
+                ], 400);
             }
 
-
-
-            $books=$query->paginate(5);
-
-
-
             return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'data' => $book->fresh()
+            ], 200);
 
-                'success'=>true,
+        } catch (Exception $e) {
 
-                'member'=>$member,
-
-                'books'=>$books
-
+            Log::error('Borrow book failed', [
+                'member_id' => optional($request->user())->id,
+                'book_id' => $bookId,
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
             ]);
 
-
-
-        }catch(Exception $e){
-
-    Log::error('Loading borrow books failed',[
-
-        'member_id'=>$id,
-
-        'message'=>$e->getMessage()
-
-    ]);
-
-
             return response()->json([
-
-                'success'=>false,
-
-                'message'=>'Unable to load books'
-
-            ],500);
-
-
+                'success' => false,
+                'message' => 'Unable to borrow book'
+            ], 500);
         }
-
     }
 
 
-
-
-
-
-    // POST /api/members/{member}/books/{book}/borrow
-    public function borrow(int $id, int $bookId)
+    // POST /api/books/{bookId}/return
+    // Member: Return a book
+    public function returnBook(Request $request, int $bookId)
     {
+        try {
 
-        try{
-            $member=Member::findOrFail($id);
+            // Get currently authenticated member
+            $member = $request->user();
 
-            $book=Book::findOrFail($bookId);
-            $result=$this->library
-                ->borrowBookForMember($member,$book);
+            // Find requested book
+            $book = Book::findOrFail($bookId);
 
+            // Let service handle return business logic
+            $result = $this->library->returnBook(
+                $book,
+                $member
+            );
 
+            if (!$result['ok']) {
 
-            return response()->json([
-
-                'success'=>$result['ok'],
-
-                'message'=>$result['message']
-
-            ]);
-
-
-
-        }catch(Exception $e){
-
-
-            Log::error('Borrow book failed',[
-
-                'member_id'=>$id,
-
-                'book_id'=>$bookId,
-
-                'message'=>$e->getMessage()
-
-            ]);
-
-
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message']
+                ], 400);
+            }
 
             return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'data' => $book->fresh()
+            ], 200);
 
-                'success'=>false,
+        } catch (Exception $e) {
 
-                'message'=>'Unable to borrow book'
+            Log::error('Return book failed', [
+                'member_id' => optional($request->user())->id,
+                'book_id' => $bookId,
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
+            ]);
 
-            ],500);
-
-
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to return book'
+            ], 500);
         }
-
     }
 
+    public function restore(int $id)
+{
+    try {
 
+        $result = $this->library->restoreMember($id);
 
-
-
-
-
-    // POST /api/members/{member}/books/{book}/return
-    public function returnBook(int $id, int $bookId)
-    {
-
-        try{
-            $member=Member::findOrFail($id);
-            $book=Book::findOrFail($bookId);
-
-            $result=$this->library
-                ->returnBook($book,$member);
-
+        if (!$result['ok']) {
 
             return response()->json([
-
-                'success'=>$result['ok'],
-
-                'message'=>$result['message']
-
-            ]);
-
-
-
-        }catch(Exception $e){
-
-
-            Log::error('Return book failed',[
-
-                'member_id'=>$id,
-
-                'book_id'=>$bookId,
-
-                'message'=>$e->getMessage()
-
-            ]);
-
-
-
-            return response()->json([
-
-                'success'=>false,
-
-                'message'=>'Unable to return book'
-
-            ],500);
-
-
+                'success' => false,
+                'message' => $result['message']
+            ], 400);
         }
 
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'],
+            'data' => $result['member']
+        ], 200);
+
+    } catch (Exception $e) {
+
+        Log::error('Member restoration failed', [
+            'member_id' => $id,
+            'message' => $e->getMessage(),
+            'line' => $e->getLine()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Member not found'
+        ], 404);
     }
-
-
+}
 }

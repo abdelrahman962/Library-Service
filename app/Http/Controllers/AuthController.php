@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-
+use App\Http\Requests\AdminLoginRequest;
 
 class AuthController extends Controller
 {
@@ -66,17 +66,10 @@ class AuthController extends Controller
 
 
 
-    public function login(Request $request)
+    public function login(AdminLoginRequest $request)
     {
 
 
-        $request->validate([
-
-            'email'=>'required|email',
-
-            'password'=>'required'
-
-        ]);
 
 
 

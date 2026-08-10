@@ -4,36 +4,25 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class UpdateMemberRequest extends FormRequest
+class MemberRegisterRequest extends FormRequest
 {
-    public function authorize(): bool
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+     public function authorize(): bool
     {
         return true;
     }
 
     public function rules(): array
     {
-        $memberId = $this->route('member');
-
         return [
-            'name' => 'sometimes|required|string|max:255',
+            'name' => 'required|string|max:255',
 
-            'email' => [
-                'sometimes',
-                'required',
-                'email',
-                Rule::unique('members', 'email')->ignore($memberId),
-            ],
+            'email' => 'required|email|unique:members,email',
 
-            'password' => [
-                'sometimes',
-                'nullable',
-                'string',
-                'min:8',
-                'confirmed',
-            ],
+            'password' => 'required|string|min:8|confirmed',
         ];
     }
 
@@ -46,6 +35,7 @@ class UpdateMemberRequest extends FormRequest
             'email.email' => 'Please enter a valid email address.',
             'email.unique' => 'This email already exists.',
 
+            'password.required' => 'Password is required.',
             'password.min' => 'Password must be at least 8 characters.',
             'password.confirmed' => 'Password confirmation does not match.',
         ];

@@ -27,6 +27,7 @@ class StoreMemberRequest extends FormRequest
               'name' => 'required|string|max:255',
 
             'email' => 'required|email|unique:members,email',
+                        'password' => 'required|string|min:8|confirmed',
 
         ];
     }
@@ -42,7 +43,9 @@ class StoreMemberRequest extends FormRequest
             'email.email' => 'Please enter a valid email address.',
 
             'email.unique' => 'This email already exists.',
-
+             'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.confirmed' => 'Password confirmation does not match.',
         ];
     }
 }

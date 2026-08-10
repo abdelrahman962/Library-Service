@@ -2,18 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use App\Models\BorrowHistory;
-class Member extends Model
+use Spatie\Activitylog\Traits\CausesActivity;
+
+class Member extends Authenticatable
 {
-    use HasFactory,LogsActivity;
+    use HasFactory,LogsActivity, CausesActivity;
     //
-    use SoftDeletes;
-    protected $fillable = ['name','email'];
+    use SoftDeletes, HasApiTokens;
+    protected $fillable = ['name','email','password'];
 public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -31,5 +34,12 @@ public function getActivitylogOptions(): LogOptions
 public function getBorrowedBooks()
 {
     return $this->books;
+}
+
+
+protected function casts():array{
+    return[
+        'password'=>'hashed',
+    ];
 }
     }

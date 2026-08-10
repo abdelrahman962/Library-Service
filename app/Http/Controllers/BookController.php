@@ -362,5 +362,22 @@ class BookController extends Controller
         }
 
     }
+public function restore(int $id)
+{
+    $result = $this->library->restoreBook($id);
+
+    if ($result['ok'] === false) {
+        return response()->json([
+            'success' => false,
+            'message' => $result['message'],
+        ], 400);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => $result['message'],
+        'book' => $result['book'],
+    ], 200);
+}
 
 }

@@ -11,8 +11,9 @@ class BorrowHistoryController extends Controller
      public function bookHistory(int $id)
     {
 
-        $book = Book::with('borrowHistories.member')
-            ->findOrFail($id);
+        $book = Book::with([
+    'borrowHistories.member:id,name,email'
+])->findOrFail($id);
 
 
         return response()->json([

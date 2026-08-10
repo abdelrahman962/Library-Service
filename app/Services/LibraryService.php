@@ -126,6 +126,45 @@ public function returnBook(Book $book, ?Member $member = null): array
     ];
 }
 
+public function restoreBook(int $id): array
+{
+    $book = Book::withTrashed()->findOrFail($id);
+
+    if (!$book->trashed()) {
+        return [
+            'ok' => false,
+            'message' => 'This book is not deleted.',
+        ];
+    }
+
+    $book->restore();
+
+    return [
+        'ok' => true,
+        'message' => 'Book restored successfully.',
+        'book' => $book,
+    ];
+}
+
+public function restoreMember(int $id): array
+{
+    $member = Member::withTrashed()->findOrFail($id);
+
+    if (!$member->trashed()) {
+        return [
+            'ok' => false,
+            'message' => 'This member is not deleted.',
+        ];
+    }
+
+    $member->restore();
+
+    return [
+        'ok' => true,
+        'message' => 'Member restored successfully.',
+        'member' => $member,
+    ];
+}
 
 
 }
