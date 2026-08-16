@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\BorrowHistory;
 
 use Illuminate\Http\Request;
 use App\Models\Book;
@@ -27,4 +28,24 @@ class BorrowHistoryController extends Controller
         ]);
 
     }
+
+public function memberHistory(Request $request)
+{
+    $member = $request->user();
+
+    $history = BorrowHistory::where(
+        'member_id',
+        $member->id
+    )
+    ->with('book')
+    ->latest('borrowed_at')
+    ->get();
+
+    return response()->json([
+        'success' => true,
+        'data' => $history
+    ]);
+}
+
+
 }
