@@ -6,7 +6,7 @@ use App\Models\Member;
 use App\Http\Requests\MemberRegisterRequest;
 use App\Http\Requests\MemberLoginRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class MemberAuthController extends Controller
 {
@@ -15,78 +15,53 @@ class MemberAuthController extends Controller
         $validated = $request->validated();
 
         $member = Member::create([
-            'name' => $validated['name'],
-
-            'email' => $validated['email'],
-
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
             'password' => $validated['password'],
         ]);
 
-        $token = $member
-            ->createToken('member-token')
-            ->plainTextToken;
+        Auth::login($member);
+
+        $token = $member->createToken('member-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-
             'message' => 'Member registered successfully',
-
-            'member' => $member,
-
-            'token' => $token,
+            'member'  => $member,
+            'token'   => $token,
         ], 201);
     }
 
-
     public function login(MemberLoginRequest $request)
     {
-        $validated = $request->validated();
+        $credentials = $request->validated();
 
-        $member = Member::where(
-            'email',
-            $validated['email']
-        )->first();
-
-        if (
-            !$member ||
-            !Hash::check(
-                $validated['password'],
-                $member->password
-            )
-        ) {
+        if (! Auth::attempt($credentials)) {
             return response()->json([
                 'success' => false,
-
                 'message' => 'Invalid credentials',
             ], 401);
         }
 
-        $token = $member
-            ->createToken('member-token')
-            ->plainTextToken;
+        /** @var Member $member */
+        $member = Auth::user();
+
+        $token = $member->createToken('member-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-
             'message' => 'Login successful',
-
-            'member' => $member,
-
-            'token' => $token,
+            'member'  => $member,
+            'token'   => $token,
         ]);
     }
 
-
     public function logout(Request $request)
     {
-        $request
-            ->user()
-            ->currentAccessToken()
-            ->delete();
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'success' => true,
-
             'message' => 'Logged out successfully',
         ]);
     }

@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\MemberController;
@@ -14,12 +13,17 @@ use App\Http\Controllers\BorrowHistoryController;
 |--------------------------------------------------------------------------
 | Library API Routes
 |--------------------------------------------------------------------------
+|
+| Single authenticatable model: Member. Some members are flagged as
+| admins via the is_admin column, gating a separate set of routes
+| below through the 'admin' middleware.
+|
 */
 
 
 /*
 |--------------------------------------------------------------------------
-| MEMBER AUTHENTICATION
+| AUTHENTICATION
 |--------------------------------------------------------------------------
 |
 | Public routes. No token required.
@@ -27,28 +31,13 @@ use App\Http\Controllers\BorrowHistoryController;
 */
 
 Route::post(
-    '/member/register',
+    '/register',
     [MemberAuthController::class, 'register']
 );
 
 Route::post(
-    '/member/login',
+    '/login',
     [MemberAuthController::class, 'login']
-);
-
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN AUTHENTICATION
-|--------------------------------------------------------------------------
-|
-| Public login route. No token required.
-|
-*/
-
-Route::post(
-    '/admin/login',
-    [AuthController::class, 'login']
 );
 
 
@@ -57,7 +46,8 @@ Route::post(
 | MEMBER PROTECTED ROUTES
 |--------------------------------------------------------------------------
 |
-| A valid Sanctum token is required.
+| A valid Sanctum token is required. Any authenticated member
+| (admin or not) can access these.
 |
 */
 
@@ -65,19 +55,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Member Authentication
+    | Authentication
     |--------------------------------------------------------------------------
     */
 
     Route::post(
-        '/member/logout',
+        '/logout',
         [MemberAuthController::class, 'logout']
     );
 
 
     /*
     |--------------------------------------------------------------------------
-    | Member Borrowing
+    | Borrowing
     |--------------------------------------------------------------------------
     */
 
@@ -126,7 +116,7 @@ Route::middleware('auth:sanctum')->group(function () {
 | Requires:
 |
 | 1. Sanctum authentication
-| 2. AdminOnly middleware
+| 2. AdminOnly middleware (checks $request->user()->is_admin)
 |
 */
 
@@ -135,11 +125,6 @@ Route::middleware([
     'admin',
 ])->group(function () {
 
-  Route::post(
-        '/admin/logout',
-        [AuthController::class, 'logout']
-    );
-
     /*
     |--------------------------------------------------------------------------
     | Books
@@ -147,14 +132,14 @@ Route::middleware([
     */
 
     Route::patch(
-    '/books/{id}/restore',
-    [BookController::class, 'restore']
-);
+        '/books/{id}/restore',
+        [BookController::class, 'restore']
+    );
 
-Route::patch(
-    '/members/{id}/restore',
-    [MemberController::class, 'restore']
-);
+    Route::patch(
+        '/members/{id}/restore',
+        [MemberController::class, 'restore']
+    );
 
     Route::apiResource(
         'books',

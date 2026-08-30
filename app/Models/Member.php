@@ -40,6 +40,8 @@ public function getBorrowedBooks()
 protected function casts():array{
     return[
         'password'=>'hashed',
+                'is_admin'  => 'boolean',
+
     ];
 }
     }

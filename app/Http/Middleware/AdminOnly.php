@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\User;
 
 class AdminOnly
 {
@@ -16,7 +15,7 @@ class AdminOnly
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() instanceof User){
+        if (!$request->user()?->is_admin){
            return response()->json([
             'success'=>false,
             'message'=>"Admin access required.",
