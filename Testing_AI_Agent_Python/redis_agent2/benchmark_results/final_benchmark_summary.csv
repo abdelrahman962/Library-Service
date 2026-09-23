@@ -1,0 +1,10 @@
+request_name,request,category,actual_group,average_seconds,median_seconds,min_seconds,max_seconds,std_dev_seconds,p95_seconds
+Show all books,show all books,DIRECT,books,0.071073,0.011415,0.006687,0.195116,0.107451,0.176746
+Show available books,show available books,DIRECT,books,0.341666,0.0035,0.003272,1.018225,0.585918,0.916753
+Show all members,show all members,DIRECT,books,0.004479,0.004329,0.004167,0.00494,0.000408,0.004879
+My profile,show my profile,DIRECT,user,0.142159,0.005359,0.005301,0.415817,0.236995,0.374771
+My borrowed books,what have I borrowed?,DIRECT,user,0.202322,0.006977,0.004834,0.595155,0.340205,0.536337
+My borrowing history,show my borrowing history,DIRECT,user,0.251161,0.007008,0.004512,0.741964,0.42505,0.668468
+Search Python books,search for Python books,LLM,books,5.363927,3.67648,3.497917,8.917384,3.078679,8.393294
+Book details,show details about Sapiens,LLM,books,9.280456,9.258232,9.221439,9.361698,0.072722,9.351351
+General greeting,hello,LLM,general,0.934673,0.799663,0.752039,1.252319,0.276118,1.207053

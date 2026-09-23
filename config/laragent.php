@@ -151,7 +151,7 @@ return [
         'ollama' => [
             'label' => 'ollama',
             'driver' => OllamaDriver::class,
-            'model' => 'qwen2.5:7b-instruct',
+            'model' => 'llama3.2:3b',
             'default_truncation_threshold' => 131072,
             'default_max_completion_tokens' => 131072,
             'default_temperature' => 0.2,

@@ -2,6 +2,7 @@
 
 namespace App\AiAgents;
 
+use Illuminate\Support\Facades\Auth;
 use LarAgent\Agent;
 use LarAgent\Attributes\Tool;
 use App\Models\Book;
@@ -17,17 +18,28 @@ class LibraryAssistant extends Agent
 
     public function instructions()
     {
+        $user = Auth::user();
+        $isAdmin = $user?->is_admin ?? false;
+        $role = $isAdmin ? '👤 ADMIN' : '👥 MEMBER';
+
         $totalBooks     = Book::count();
         $availableBooks = Book::whereNull('member_id')->count();
         $borrowedBooks  = Book::whereNotNull('member_id')->count();
+        $totalMembers   = Member::count();
 
-        return "You are a helpful library assistant. You help members search for books,
-check availability, borrow books, and return them.
+        $accessControl = $isAdmin
+            ? "Access Control: You have ADMIN privileges. You can perform all member operations PLUS create/update/delete books and manage members."
+            : "Access Control: You are a MEMBER. You can search, borrow, and return books. Admin-only operations will be rejected.";
+
+        return "You are a helpful library assistant. Current user: {$user?->name} (Role: {$role})
 
 Library statistics:
 - Total books: {$totalBooks}
 - Available books: {$availableBooks}
 - Currently borrowed: {$borrowedBooks}
+- Total members: {$totalMembers}
+
+{$accessControl}
 
 Rules:
 - Before borrowing or returning a book, always confirm the member's email address.
@@ -35,12 +47,10 @@ Rules:
 - Keep responses short and clear.
 - Do not invent book titles, authors, or availability — always use the tools.
 - Do not pretend to be a human. Only use information returned by your tools.
-- For greetings, small talk, or general questions that don't involve books or members,
-  respond directly without calling any tool.
-- When a tool returns book information, always present that information to the member.
+- For greetings, small talk, or general questions that don't involve books or members, respond directly without calling any tool.
+- When a tool returns book information, always present that information to the user.
 - Never replace a successful tool result with a generic question or follow-up.
-- If listAvailableBooks returns books, display the returned list exactly or summarize it clearly.
-- If listAllBooks returns books, display the returned list exactly or summarize it clearly.";
+- If a tool returns 'permission denied', explain to the user that this is an admin-only operation.";
     }
 
     public function prompt($message)
@@ -52,9 +62,7 @@ Rules:
 
 // ─── TOOL 1: Search books ──────────────────────────────────────────────────
 
-    #[Tool("Search for books by title or category. ONLY call this when the member explicitly
-mentions a book title, author name, or reading topic. NEVER call this for greetings
-or general conversation.")]
+   #[Tool("Search the library for books by title, author, or category. Use this tool when the member mentions a specific book title, author name, category, or reading topic. Pass the exact title, author, category, or topic as the query. Do not use this tool for greetings, general conversation, or requests to list all available books.")]
     public static function searchBooks(string $query): string
     {
         $service = new LibraryService();
@@ -325,18 +333,171 @@ public static function libraryStats(): string
     $availableBooks = Book::whereNull('member_id')->count();
     $borrowedBooks  = Book::whereNotNull('member_id')->count();
     $totalMembers   = Member::count();
-    // $totalBorrows   = BorrowHistory::count();
 
     return "Library statistics:
 - Total books: {$totalBooks}
 - Available books: {$availableBooks}
 - Currently borrowed: {$borrowedBooks}
-- Total members: {$totalMembers}
-";
-// - Total borrows ever recorded: {$totalBorrows}
+- Total members: {$totalMembers}";
 }
 
+// ─── TOOL 12: Create a book (ADMIN ONLY) ──────────────────────────────────────
 
+#[Tool("Create a new book in the library. ADMIN ONLY. Requires: title, author, category, publish_year.")]
+public static function createBook(
+    string $title,
+    string $author,
+    string $category,
+    int $publishYear
+): string
+{
+    // Authorization check
+    if (!Auth::user()?->is_admin) {
+        return "❌ Permission denied. You don't have permission to create books. Only admins can do this.";
+    }
 
+    if ($publishYear > now()->year) {
+        return "❌ Publish year cannot be in the future.";
+    }
+
+    if (trim($title) === '' || trim($author) === '') {
+        return "❌ Title and author are required.";
+    }
+
+    $book = Book::create([
+        'title' => trim($title),
+        'author' => trim($author),
+        'category' => trim($category),
+        'publish_year' => $publishYear,
+    ]);
+
+    return "✅ Book '{$title}' created successfully (ID: {$book->id}).";
+}
+
+// ─── TOOL 13: Update a book (ADMIN ONLY) ──────────────────────────────────────
+
+#[Tool("Update an existing book. ADMIN ONLY. Provide book ID and at least one field to update.")]
+public static function updateBook(
+    int $bookId,
+    ?string $title = null,
+    ?string $author = null,
+    ?string $category = null,
+    ?int $publishYear = null
+): string
+{
+    // Authorization check
+    if (!Auth::user()?->is_admin) {
+        return "❌ Permission denied. You don't have permission to update books. Only admins can do this.";
+    }
+
+    $book = Book::find($bookId);
+    if (!$book) {
+        return "❌ Book with ID {$bookId} not found.";
+    }
+
+    $updates = [];
+    if ($title) $updates['title'] = trim($title);
+    if ($author) $updates['author'] = trim($author);
+    if ($category) $updates['category'] = trim($category);
+    if ($publishYear) $updates['publish_year'] = $publishYear;
+
+    if (empty($updates)) {
+        return "❌ No valid updates provided.";
+    }
+
+    $book->update($updates);
+
+    return "✅ Book '{$book->title}' updated successfully.";
+}
+
+// ─── TOOL 14: Delete a book (ADMIN ONLY) ──────────────────────────────────────
+
+#[Tool("Delete (soft delete) a book. ADMIN ONLY. Requires book ID.")]
+public static function deleteBook(int $bookId): string
+{
+    // Authorization check
+    if (!Auth::user()?->is_admin) {
+        return "❌ Permission denied. You don't have permission to delete books. Only admins can do this.";
+    }
+
+    $book = Book::find($bookId);
+    if (!$book) {
+        return "❌ Book with ID {$bookId} not found.";
+    }
+
+    $book->delete();
+    return "✅ Book '{$book->title}' deleted successfully.";
+}
+
+// ─── TOOL 15: List all members (ADMIN ONLY) ──────────────────────────────────
+
+#[Tool("List all members in the library. ADMIN ONLY.")]
+public static function listMembers(): string
+{
+    // Authorization check
+    if (!Auth::user()?->is_admin) {
+        return "❌ Permission denied. You don't have permission to view all members. Only admins can do this.";
+    }
+
+    $members = Member::all();
+
+    if ($members->isEmpty()) {
+        return "No members found in the library.";
+    }
+
+    $list = $members->map(function ($m) {
+        $role = $m->is_admin ? '👤 ADMIN' : '👥 Member';
+        $borrowedCount = $m->books()->count();
+        return "- [{$m->id}] {$m->name} ({$m->email}) — {$role} — {$borrowedCount} book(s) borrowed";
+    })->implode("\n");
+
+    return "All members ({$members->count()} total):\n{$list}";
+}
+
+// ─── TOOL 16: Make member admin (ADMIN ONLY) ──────────────────────────────────
+
+#[Tool("Grant admin privileges to a member. ADMIN ONLY. Requires member email.")]
+public static function makeAdmin(string $memberEmail): string
+{
+    // Authorization check
+    if (!Auth::user()?->is_admin) {
+        return "❌ Permission denied. You don't have permission to manage member roles. Only admins can do this.";
+    }
+
+    $member = Member::where('email', $memberEmail)->first();
+    if (!$member) {
+        return "❌ Member with email '{$memberEmail}' not found.";
+    }
+
+    if ($member->is_admin) {
+        return "ℹ️ {$member->name} is already an admin.";
+    }
+
+    $member->update(['is_admin' => true]);
+    return "✅ {$member->name} has been promoted to admin.";
+}
+
+// ─── TOOL 17: Remove admin privileges (ADMIN ONLY) ─────────────────────────────
+
+#[Tool("Remove admin privileges from a member. ADMIN ONLY. Requires member email.")]
+public static function removeAdmin(string $memberEmail): string
+{
+    // Authorization check
+    if (!Auth::user()?->is_admin) {
+        return "❌ Permission denied. You don't have permission to manage member roles. Only admins can do this.";
+    }
+
+    $member = Member::where('email', $memberEmail)->first();
+    if (!$member) {
+        return "❌ Member with email '{$memberEmail}' not found.";
+    }
+
+    if (!$member->is_admin) {
+        return "ℹ️ {$member->name} is not an admin.";
+    }
+
+    $member->update(['is_admin' => false]);
+    return "✅ Admin privileges removed from {$member->name}.";
+}
 }
 

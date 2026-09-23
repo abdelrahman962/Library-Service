@@ -1,0 +1,28 @@
+timestamp,request_name,request,expected_category,actual_group,run,response_time_seconds
+2026-09-14T14:56:25.280890,Show all books,show all books,DIRECT,books,1,0.195116
+2026-09-14T14:56:25.280890,Show all books,show all books,DIRECT,books,2,0.006687
+2026-09-14T14:56:25.280890,Show all books,show all books,DIRECT,books,3,0.011415
+2026-09-14T14:56:25.280890,Show available books,show available books,DIRECT,books,1,1.018225
+2026-09-14T14:56:25.280890,Show available books,show available books,DIRECT,books,2,0.0035
+2026-09-14T14:56:25.280890,Show available books,show available books,DIRECT,books,3,0.003272
+2026-09-14T14:56:25.280890,Show all members,show all members,DIRECT,books,1,0.00494
+2026-09-14T14:56:25.280890,Show all members,show all members,DIRECT,books,2,0.004329
+2026-09-14T14:56:25.280890,Show all members,show all members,DIRECT,books,3,0.004167
+2026-09-14T14:56:25.280890,My profile,show my profile,DIRECT,user,1,0.415817
+2026-09-14T14:56:25.280890,My profile,show my profile,DIRECT,user,2,0.005301
+2026-09-14T14:56:25.280890,My profile,show my profile,DIRECT,user,3,0.005359
+2026-09-14T14:56:25.280890,My borrowed books,what have I borrowed?,DIRECT,user,1,0.595155
+2026-09-14T14:56:25.280890,My borrowed books,what have I borrowed?,DIRECT,user,2,0.004834
+2026-09-14T14:56:25.280890,My borrowed books,what have I borrowed?,DIRECT,user,3,0.006977
+2026-09-14T14:56:25.280890,My borrowing history,show my borrowing history,DIRECT,user,1,0.741964
+2026-09-14T14:56:25.280890,My borrowing history,show my borrowing history,DIRECT,user,2,0.007008
+2026-09-14T14:56:25.280890,My borrowing history,show my borrowing history,DIRECT,user,3,0.004512
+2026-09-14T14:56:25.280890,Search Python books,search for Python books,LLM,books,1,8.917384
+2026-09-14T14:56:25.280890,Search Python books,search for Python books,LLM,books,2,3.497917
+2026-09-14T14:56:25.280890,Search Python books,search for Python books,LLM,books,3,3.67648
+2026-09-14T14:56:25.280890,Book details,show details about Sapiens,LLM,books,1,9.258232
+2026-09-14T14:56:25.280890,Book details,show details about Sapiens,LLM,books,2,9.361698
+2026-09-14T14:56:25.280890,Book details,show details about Sapiens,LLM,books,3,9.221439
+2026-09-14T14:56:25.280890,General greeting,hello,LLM,general,1,1.252319
+2026-09-14T14:56:25.280890,General greeting,hello,LLM,general,2,0.799663
+2026-09-14T14:56:25.280890,General greeting,hello,LLM,general,3,0.752039

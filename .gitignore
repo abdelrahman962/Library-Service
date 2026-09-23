@@ -25,3 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Per-member long-term notes written by Testing_AI_Agent_Python/memory.py —
+# real conversation content, not something to commit.
+/Testing_AI_Agent_Python/memory/

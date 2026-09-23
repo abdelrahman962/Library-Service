@@ -36,6 +36,11 @@ public function getBorrowedBooks()
     return $this->books;
 }
 
+public function aiConversations()
+{
+    return $this->hasMany(AiConversation::class);
+}
+
 
 protected function casts():array{
     return[
